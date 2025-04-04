@@ -50,6 +50,7 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ["id","created_at","items"]
+        read_only_fields = ("id","created_at")
 
 
 class AddressSerializer(serializers.ModelSerializer):

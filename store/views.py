@@ -1,6 +1,7 @@
 from rest_framework import  viewsets
 from store.models import Customer, Product, Category, Order, OrderItem, ProductImage, CartItem
-from store.serializer import CategorySerializer, ProductSerializer, CustomerSerializer, OrderSerializer,ProductImageSerializer,OrderItemSerializer,CartItemSerializer,CartSerializer
+from store.serializer import (CategorySerializer, ProductSerializer, CustomerSerializer,
+                              OrderSerializer,ProductImageSerializer,OrderItemSerializer,CartItemSerializer,CartSerializer)
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter,OrderingFilter
 # Create your views here.
@@ -54,7 +55,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
 class CartViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+    serializer_class = CartSerializer
 
 
 
