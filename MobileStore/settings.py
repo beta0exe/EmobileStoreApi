@@ -154,3 +154,5 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': False,
 
 }
+
+
