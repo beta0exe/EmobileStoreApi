@@ -13,19 +13,51 @@ class Category(models.Model):
         return self.title
 
 
+
+
 class Product(models.Model):
+    brand = models.CharField(max_length=100)
     title = models.CharField(max_length=100)
     description = models.TextField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    screen_size = models.DecimalField(max_digits=10, decimal_places=2)
+    cpu = models.CharField(max_length=100)
+    cores = models.IntegerField()
+    main_camera = models.CharField(max_length=100)
+    front_camera = models.CharField(max_length=100)
+    battery_capacity = models.IntegerField()
+    is_active = models.BooleanField(default=True)
+    delivery_info = models.CharField(max_length=100)
+    warranty = models.CharField(max_length=100)
+    screen_resolution = models.CharField(max_length=100)
+    screen_refresh_rate = models.IntegerField()
+    pixel_density = models.IntegerField()
     inventory = models.IntegerField()
-    last_update = models.DateTimeField()
+    last_update = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     def __str__(self):
         return self.title
 
+class ProductColors(models.Model):
+    color = models.CharField(max_length=100)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name='colors')
+    def __str__(self):
+        return self.color
+
+class ProductStorage(models.Model):
+    StorageChoices = [
+        ("128GB", "128GB"),
+        ("256GB", "256GB"),
+        ("512GB", "512GB"),
+        ("1TB", "1TB"),
+    ]
+    size = models.CharField(max_length=10,choices=StorageChoices,default="128GB")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="storage")
+    def __str__(self):
+        return self.size
 
 class ProductImage(models.Model):
-    image = models.ImageField(upload_to="images/")
+    image = models.URLField()
     product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="images")
 
 class Customer(models.Model):

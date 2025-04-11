@@ -2,7 +2,7 @@ from itertools import product
 
 from rest_framework import  serializers
 
-from store.models import Category, Product, Order, Customer,OrderItem,CartItem,ProductImage,Cart,Address
+from store.models import Category, Product,ProductStorage,ProductColors, Order, Customer,OrderItem,CartItem,ProductImage,Cart,Address
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -18,15 +18,56 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         product_id =self.context["product_id"]
-        Product.objects.create(product_id = product_id,**validated_data)
+        return Product.objects.create(product_id = product_id,**validated_data)
+
+class ProductStorageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductStorage
+        fields = ["size"]
+
+class ProductColorsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductColors
+        fields = ["color"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True)
+    colors = ProductColorsSerializer(many=True)
+    storage = ProductStorageSerializer(many=True)
+    category = CategorySerializer()
     class Meta:
         model = Product
-        fields = ["id","title","description","unit_price","inventory","last_update","category","images"]
+        fields = ["id","brand","title","description","storage"
+            ,"colors","cpu","cores","main_camera","front_camera"
+            ,"battery_capacity","delivery_info","is_active","warranty"
+            ,"screen_resolution","screen_refresh_rate","screen_size","pixel_density","unit_price",
+                  "inventory","last_update","category","images"]
         read_only_fields = ("id","last_update")
+
+    def create(self, validated_data):
+        images_data = validated_data.pop("images", [])
+        colors_data = validated_data.pop("colors", [])
+        storage_data = validated_data.pop("storage", [])
+        category_data = validated_data.pop("category", None)
+
+        if category_data is None:
+            raise serializers.ValidationError({"category": "This field is required."})
+
+        category, _ = Category.objects.get_or_create(title=category_data["title"])
+        product = Product.objects.create(category=category, **validated_data)
+
+        for image in images_data:
+            ProductImage.objects.create(product=product, **image)
+
+        for color in colors_data:
+            ProductColors.objects.create(product=product, **color)
+
+        for storage in storage_data:
+            ProductStorage.objects.create(product=product, **storage)
+
+        return product
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:

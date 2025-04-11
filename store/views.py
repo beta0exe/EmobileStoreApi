@@ -28,7 +28,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         category_id = self.kwargs.get('category_pk')
         if category_id:
             return Product.objects.filter(category_id=category_id)
-        return Product.objects.all()
+        return Product.objects.select_related("category").all()
 
 
 class ProductImageViewSet(viewsets.ModelViewSet):
