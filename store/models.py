@@ -1,4 +1,5 @@
 import uuid
+from msilib.schema import Property
 
 from django.conf import settings
 from django.db import models
@@ -9,11 +10,9 @@ from core.models import User
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
+
     def __str__(self):
         return self.title
-
-
-
 
 class Product(models.Model):
     brand = models.CharField(max_length=100)
@@ -35,12 +34,14 @@ class Product(models.Model):
     inventory = models.IntegerField()
     last_update = models.DateTimeField(auto_now=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.title
 
 class ProductColors(models.Model):
     color = models.CharField(max_length=100)
     product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name='colors')
+
     def __str__(self):
         return self.color
 
@@ -53,6 +54,7 @@ class ProductStorage(models.Model):
     ]
     size = models.CharField(max_length=10,choices=StorageChoices,default="128GB")
     product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="storage")
+
     def __str__(self):
         return self.size
 
@@ -74,30 +76,44 @@ class Address(models.Model):
     street = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
 
+
+
+class Cart(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+
+    @property
+    def totals(self):
+        return sum(item.total for item in self.items.all())
+
+class CartItem(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE,related_name="items")
+    quantity = models.PositiveIntegerField()
+
+    @property
+    def total(self):
+        return self.quantity * self.product.unit_price
+
 class Order(models.Model):
     payment_status =[
         ("S","Successful"),
         ("P","Pending"),
         ("F","Failed"),
     ]
-    placed_at = models.DateTimeField()
+    cart = models.ForeignKey(Cart, on_delete=models.PROTECT,related_name="order")
+    placed_at = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=1,choices=payment_status,default="P")
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
 
 class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name="items")
     quantity = models.SmallIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
-
-
-class Cart(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class CartItem(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
+    @property
+    def total(self):
+        return self.quantity * self.unit_price

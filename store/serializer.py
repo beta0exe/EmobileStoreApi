@@ -70,6 +70,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
     class Meta:
         model = OrderItem
         fields = ["id","product","quantity","unit_price"]
@@ -78,20 +79,37 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True,read_only=True)
     class Meta:
         model = Order
-        fields = ["id","payment_status","placed_at","customer","items"]
+        fields = ["id","payment_status","placed_at","customer","items","total"]
+        read_only_fields = ("id","payment_status","total")
 
 class CartItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_id = serializers.IntegerField(write_only=True)
+    quantity = serializers.IntegerField(min_value=1)
+
     class Meta:
         model = CartItem
-        fields = ["id","product","quantity"]
+        fields = ["id", "product", "product_id", "quantity"]
+
+    def validate_product_id(self, value):
+        if not Product.objects.filter(id=value, is_active=True).exists():
+            raise serializers.ValidationError("Product does not exist or is unavailable.")
+        return value
+
+    def validate_quantity(self, value):
+       if value < 1:
+           raise serializers.ValidationError({"quantity": "This quantity cannot be less than 1"})
+       return value
+
 
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True,read_only=True)
+    id = serializers.CharField(read_only=True)
     class Meta:
         model = Cart
         fields = ["id","created_at","items"]
-        read_only_fields = ("id","created_at")
+        read_only_fields = ["created_at"]
 
 
 class AddressSerializer(serializers.ModelSerializer):
